@@ -42,6 +42,8 @@ class Category(db.Model):
     def __repr__(self):
         return "<Category %r>" % self.name
 
+# class User(db.Model):
+    # TODO create User class
 
 @app.route("/blog", methods=["GET"])
 def index():
@@ -49,14 +51,14 @@ def index():
     entry_id = request.args.get("id")
 
     if entry_id:
-        blog_entry = Blog.query.filter_by(id=entry_id).first()
+        blog_entry = Post.query.filter_by(id=entry_id).first()
         entry_title = blog_entry.title
         entry_body = blog_entry.body
 
         return render_template("blog-entry.html", entry_title=entry_title, entry_body=entry_body)
 
     else:
-        entries = Blog.query.order_by(desc(Blog.id)).all()
+        entries = Post.query.order_by(desc(Post.id)).all()
         return render_template("blog.html", title="The Blog", entries=entries)
 
 
@@ -81,7 +83,7 @@ def new_post():
         
         if not entry_title_error and not entry_body_error:
         # TODO make it post the thing you entered
-            new_entry = Blog(entry_title, entry_body)
+            new_entry = Post(entry_title, entry_body)
             db.session.add(new_entry)
             db.session.commit()
             entry_id = new_entry.id
@@ -94,6 +96,15 @@ def new_post():
             )
 
     return render_template("newpost.html")
+
+
+# @app.route("/signup", methods=["POST", "GET"])
+
+# @app.route("/login", methods=["POST", "GET"])
+
+# @app.route("/index", methods=["POST", "GET"])
+
+# @app.route("/logout", methods=["POST", "GET"])
 
 
 if __name__ == "__main__":
