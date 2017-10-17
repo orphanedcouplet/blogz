@@ -12,38 +12,62 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://blogz:blogzdevpassword@
 db = SQLAlchemy(app)
 
 
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username =  db.Column(db.String(50), nullable=False)
+    password = db.Column(db.String(50), nullable=False)
+
+    posts = db.relationship("Post", backref="user", lazy=True) # True is equivalent to "select" in this case. See flask-sqlalchemy docs for more info. Page is bookmarked: "Declaring Models"
+
+    def __init__(self, username, password): #do i need to put posts in here?
+        self.username = username
+        self.password = password
+        # self.posts = posts #???
+    
+    def __repr__(self):
+        return "<User %r>" % self.username
+
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(280))
-    body = db.Column(db.Text)
-    pub_date = db.Column(db.DateTime)
+    title = db.Column(db.String(280), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    pub_date = db.Column(db.DateTime, nullable=False)
 
-    category_id = db.Column(db.Integer, db.ForeignKey("category.id"))
-    category = db.relationship("Category", backref=db.backref("posts", lazy="dynamic"))
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
-    def __init__(self, title, body, category, pub_date=None):
+    tags = db.relationship("Tag", secondary=tags, lazy="subquery", backref=db.backref("posts", lazy=True))
+
+    def __init__(self, title, body, pub_date=None, user_id):
         self.title = title
         self.body = body
         if pub_date is None:
             pub_date = datetime.now()
         self.pub_date = pub_date
-        self.category = category
+        self.user_id = user_id
     
     def __repr__(self):
         return "<Post %r>" % self.title
 
-class Category(db.Model):
+class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
+    tagname = db.Column(db.String(280), nullable=False)
 
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, id, tagname):
+        self.tagname = tagname
     
     def __repr__(self):
-        return "<Category %r>" % self.name
+        return "<Tag %r>" % self.tagname
 
-# class User(db.Model):
-    # TODO create User class
+
+tags = db.Table(
+    "tags",
+    db.Column("tag_id", db.Integer, db.ForeignKey("tag.id"), primary_key=True)
+    db.Column("post_id", db.Integer, db.ForeignKey("post.id"), primary_key=True)
+    )
+
+# not that i understand it really, but tags (many-to-many relationship with posts) are basically copied from the example in the docs:
+# http://flask-sqlalchemy.pocoo.org/2.3/models/
+
 
 @app.route("/blog", methods=["GET"])
 def index():
@@ -64,9 +88,7 @@ def index():
 
 @app.route("/newpost", methods=["POST", "GET"])
 def new_post():
-    # TODO make error messages for if blog title or blog body is empty
-    # hint: look at user-signup
-
+    # validation errors
     if request.method == "POST":
         entry_title = request.form["title"]
         entry_title_error = ""
@@ -82,7 +104,7 @@ def new_post():
             entry_body_error = "Your post must have text!"
         
         if not entry_title_error and not entry_body_error:
-        # TODO make it post the thing you entered
+        # make it post the thing you entered (& redirect to new post URL after it's created)
             new_entry = Post(entry_title, entry_body)
             db.session.add(new_entry)
             db.session.commit()
