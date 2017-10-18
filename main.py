@@ -16,55 +16,79 @@ app.secret_key = "kaljf#ojfm/@iop1j32rmvop+90r8w.........34gfer14@~#$jcehelloope
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username =  db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(50), nullable=False)
+    username =  db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
 
     posts = db.relationship("Post", backref="user", lazy=True) # True is equivalent to "select" in this case. See flask-sqlalchemy docs for more info. Page is bookmarked: "Declaring Models". Also: do I even need lazy???
 
-    def __init__(self, username, password): #do i need to put posts in here?
-        self.username = username
-        self.password = password
-        # self.posts = posts #???
+# !!!
+# "Note how we never defined a __init__ method on the User class? That’s because SQLAlchemy adds an implicit constructor to all model classes which accepts keyword arguments for all its columns and relationships."
+# source: http://flask-sqlalchemy.pocoo.org/2.3/quickstart/#simple-relationships
+# !!!
+    # def __init__(self, username, password, email): #do i need to put posts in here?
+    #     self.username = username
+    #     self.password = password
+    #     self.email = email
+    #     # self.posts = posts #???
     
     def __repr__(self):
         return "<User %r>" % self.username
 
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(280), nullable=False)
+    title = db.Column(db.String(300), nullable=False)
     body = db.Column(db.Text, nullable=False)
-    pub_date = db.Column(db.DateTime, nullable=False)
+    pub_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    user = db.relationship("User", backref=db.backref("posts", lazy=True))
 
-    tags = db.relationship("Tag", secondary=tags, lazy="subquery", backref=db.backref("posts", lazy=True)) # what does "secondary" mean?
+    tags = db.relationship("Tag", lazy="subquery", backref=db.backref("posts", lazy=True))
 
-    def __init__(self, title, body, pub_date=None, user): #do i put tags in the initialization function?
-        self.title = title
-        self.body = body
-        if pub_date is None:
-            pub_date = datetime.now()
-        self.pub_date = pub_date
-        self.user = user # changed from "self.user_id = user_id" after looking at the completed "Get It Done" code - so maybe finish those lessons
-        # self.tags = tags #???
+    # category_id = db.Column(db.Integer, db.ForeignKey("category.id"), nullable=False)
+    # category = db.relationship("Category", backref=db.backref("posts", lazy=True))
+
+# !!! see above
+    # def __init__(self, title, body, pub_date, user): #do i put tags in the initialization function?
+    #     self.title = title
+    #     self.body = body
+    #     self.pub_date = pub_date
+    #     self.user = user # changed from "self.user_id = user_id" after looking at the completed "Get It Done" code - so maybe finish those lessons
+    #     # self.tags = tags #???
     
     def __repr__(self):
         return "<Post %r>" % self.title
 
+# "Category" class is for making different kinds of posts
+# like "video post" or "text post" etc
+# but I'm commenting it out because that's TOO AMBITIOUS for right now
+# class Category(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String(50), nullable=False)
+
+# # !!! see above
+#     # def __init__(self, name):
+#     #     self.name = name
+    
+#     def __repr__(self):
+#         return "<Category %r>" % self.name
+
 class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    tagname = db.Column(db.String(280), nullable=False)
+    name = db.Column(db.String(300), nullable=False)
 
-    def __init__(self, id, tagname):
-        self.tagname = tagname
+# !!! see above
+    # def __init__(self, id, name):
+    #     self.name = name
     
     def __repr__(self):
-        return "<Tag %r>" % self.tagname
+        return "<Tag %r>" % self.name
 
 # many-to-many helper table (may need to go BEFORE class definitions??!?)
-tags = db.Table(
-    "tags",
-    db.Column("tag_id", db.Integer, db.ForeignKey("tag.id"), primary_key=True)
+post_tag_table = db.Table(
+    "post_tag_table", 
+    db.Column("tag_id", db.Integer, db.ForeignKey("tag.id"), primary_key=True), 
     db.Column("post_id", db.Integer, db.ForeignKey("post.id"), primary_key=True)
     )
 
