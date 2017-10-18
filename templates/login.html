@@ -2,5 +2,37 @@
 
 {% block content %}
 
+<h1>Log in!</h1>
+
+<form method="post">
+    <table>
+        <tr>
+            <td class="label">
+                <label for="username">Username:</label>
+            </td>
+            <td class="input">
+                <input type="text" name="username" value="{{username}}" id="username" />
+            </td>
+            <td class="error">
+                <span class="error">{{username_error}}</span>
+            </td>
+        </tr>
+        <tr id="password-row">
+            <td class="label">
+                <label for="password">Password:</label>
+            </td>
+            <td class="input">
+                <input type="password" name="password" value="{{password}}" id="password" />
+            </td>
+            <td class="error">
+                <span class="error">{{password_error}}</span>
+            </td>
+        </tr>
+    </table>
+    <input type="submit" value="Log in!" />
+</form>
+
+<h2>New user?</h2>
+<a href="/register">Create Account!</a>
 
 {% endblock %}

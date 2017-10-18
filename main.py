@@ -110,12 +110,14 @@ def register():
         username = request.form["username"]
         password_initial = request.form["password_initial"]
         password_verify = request.form["password_verify"]
+        email = request.form["email"]
 
         # TODO validate user inputs
 
-        existing_user = User.query.filter_by(username=username).first()
-        if not existing_user:
-            new_user = User(username, password_initial)
+        existing_username = User.query.filter_by(username=username).first()
+        existing_email = User.query.filter_by(email=email).first()
+        if not existing_username and not existing_email:
+            new_user = User(username, password_initial, email)
             db.session.add(new_user)
             db.session.commit()
             session["username"] = username
@@ -130,19 +132,25 @@ def register():
 @app.route("/login", methods=["POST", "GET"])
 def login():
 
-# needs configuring based on html template which is not even partly filled in:
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
         user = User.query.filter_by(username=username).first()
 
-        if user and user.password == password:
-            session["username"] = username
-            flash("Logged in")
-            return redirect("/")
+        if user:
+            if user.password == password:
+                session["username"] = username
+                flash("Logged in successfully!", category='message')
+                return redirect("/newpost")
+            else:
+                flash("Incorrect password!", category='error')
+                return redirect("/login")
         else:
-            flash("User password incorrect, or user does not exist", category="error")
+            flash("Username does not exist!", category='error')
+            return redirect("/login")
     
+    # TODO "Create Account" button
+
     return render_template("login.html")
 
 
