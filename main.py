@@ -46,8 +46,8 @@ class Post(db.Model):
 
     tags = db.relationship("Tag", lazy="subquery", backref=db.backref("posts", lazy=True))
 
-    # category_id = db.Column(db.Integer, db.ForeignKey("category.id"), nullable=False)
-    # category = db.relationship("Category", backref=db.backref("posts", lazy=True))
+    category_id = db.Column(db.Integer, db.ForeignKey("category.id"), nullable=False)
+    category = db.relationship("Category", backref=db.backref("posts", lazy=True))
 
 # !!! see above
     # def __init__(self, title, body, pub_date, user): #do i put tags in the initialization function?
@@ -63,16 +63,16 @@ class Post(db.Model):
 # "Category" class is for making different kinds of posts
 # like "video post" or "text post" etc
 # but I'm commenting it out because that's TOO AMBITIOUS for right now
-# class Category(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String(50), nullable=False)
+class Category(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
 
 # # !!! see above
 #     # def __init__(self, name):
 #     #     self.name = name
     
-#     def __repr__(self):
-#         return "<Category %r>" % self.name
+    def __repr__(self):
+        return "<Category %r>" % self.name
 
 class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
