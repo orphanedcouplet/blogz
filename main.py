@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.config["DEBUG"] = True
 # Note: the connection string after :// contains the following info:
 # user:password@server:portNumber/databaseName
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://blogz:blogzdevpassword@localhost:8889/blogz"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://blogz:blogzdev@localhost:8889/blogz"
 app.config["SQLALCHEMY_ECHO"] = True
 db = SQLAlchemy(app)
 app.secret_key = "kaljf#ojfm/@iop1j32rmvop+90r8w.........34gfer14@~#$jcehellooperatorcanyougivemenumber9"
@@ -18,18 +18,16 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username =  db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
 
-    posts = db.relationship("Post", backref="user", lazy=True) # True is equivalent to "select" in this case. See flask-sqlalchemy docs for more info. Page is bookmarked: "Declaring Models". Also: do I even need lazy???
+    posts = db.relationship("Post", backref="user")
 
 # !!!
 # "Note how we never defined a __init__ method on the User class? That’s because SQLAlchemy adds an implicit constructor to all model classes which accepts keyword arguments for all its columns and relationships."
 # source: http://flask-sqlalchemy.pocoo.org/2.3/quickstart/#simple-relationships
 # !!!
-    # def __init__(self, username, password, email): #do i need to put posts in here?
+    # def __init__(self, username, password): #do i need to put posts in here?
     #     self.username = username
     #     self.password = password
-    #     self.email = email
     #     # self.posts = posts #???
     
     def __repr__(self):
@@ -41,13 +39,13 @@ class Post(db.Model):
     body = db.Column(db.Text, nullable=False)
     pub_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    user = db.relationship("User", backref=db.backref("posts", lazy=True))
+    owner_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    owner = db.relationship("User", backref="owner_posts", foreign_keys=[owner_id])
 
-    tags = db.relationship("Tag", lazy="subquery", backref=db.backref("posts", lazy=True))
+    # tags = db.relationship("Tag", lazy="subquery", backref=db.backref("posts"))
 
     # category_id = db.Column(db.Integer, db.ForeignKey("category.id"), nullable=False)
-    # category = db.relationship("Category", backref=db.backref("posts", lazy=True))
+    # category = db.relationship("Category", backref=db.backref("posts"))
 
 # !!! see above
     # def __init__(self, title, body, pub_date, user): #do i put tags in the initialization function?
@@ -74,31 +72,31 @@ class Post(db.Model):
 #     def __repr__(self):
 #         return "<Category %r>" % self.name
 
-class Tag(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(300), nullable=False)
+# class Tag(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String(300), nullable=False)
 
-# !!! see above
-    # def __init__(self, id, name):
-    #     self.name = name
+# # !!! see above
+#     # def __init__(self, id, name):
+#     #     self.name = name
     
-    def __repr__(self):
-        return "<Tag %r>" % self.name
+#     def __repr__(self):
+#         return "<Tag %r>" % self.name
 
-# many-to-many helper table (may need to go BEFORE class definitions??!?)
-post_tag_table = db.Table(
-    "post_tag_table", 
-    db.Column("tag_id", db.Integer, db.ForeignKey("tag.id"), primary_key=True), 
-    db.Column("post_id", db.Integer, db.ForeignKey("post.id"), primary_key=True)
-    )
+# # many-to-many helper table (may need to go BEFORE class definitions??!?)
+# post_tag_table = db.Table(
+#     "post_tag_table", 
+#     db.Column("tag_id", db.Integer, db.ForeignKey("tag.id"), primary_key=True), 
+#     db.Column("post_id", db.Integer, db.ForeignKey("post.id"), primary_key=True)
+#     )
 
-# not that i understand it really, but tags (many-to-many relationship with posts) are basically copied from the example in the docs:
-# http://flask-sqlalchemy.pocoo.org/2.3/models/
+# # not that i understand it really, but tags (many-to-many relationship with posts) are basically copied from the example in the docs:
+# # http://flask-sqlalchemy.pocoo.org/2.3/models/
 
 
 @app.before_request
 def require_login():
-    allowed_routes = ["login", "register"]
+    allowed_routes = ["login", "register", "all_blogs", "index"]
     if request.endpoint not in allowed_routes and "username" not in session:
         return redirect("/login")
 
@@ -110,14 +108,12 @@ def register():
         username = request.form["username"]
         password_initial = request.form["password_initial"]
         password_verify = request.form["password_verify"]
-        email = request.form["email"]
 
         # TODO validate user inputs
 
         existing_username = User.query.filter_by(username=username).first()
-        existing_email = User.query.filter_by(email=email).first()
-        if not existing_username and not existing_email:
-            new_user = User(username, password_initial, email)
+        if not existing_username:
+            new_user = User(username, password_initial)
             db.session.add(new_user)
             db.session.commit()
             session["username"] = username
@@ -156,13 +152,15 @@ def login():
 
 @app.route("/logout", methods=["GET"])
 def logout():
-    del session["email"]
+    del session["username"]
     return redirect("/")
 
 @app.route("/", methods=["POST", "GET"])
 def index():
 
     user = User.query.filter_by(username=session["username"]).first()
+
+    # TODO display a list of all usernames
     
 
 @app.route("/blog", methods=["GET"])

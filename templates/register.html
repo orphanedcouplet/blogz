@@ -6,7 +6,7 @@
 
 <h1>Register!</h1>
 
-<form method="post">
+<form action="/register" method="post">
     <table>
         <tr>
             <td class="label">
@@ -39,17 +39,6 @@
             </td>
             <td class="error">
                 <span class="error">{{password_verify_error}}</span>
-            </td>
-        </tr>
-        <tr>
-            <td class="label">
-                <label for="email">Email (optional):</label>
-            </td>
-            <td class="input">
-                <input type="email" name="email" value="{{email}}" id="email" />
-            </td>
-            <td class="error">
-                <span class="error">{{email_error}}</span>
             </td>
         </tr>
     </table>

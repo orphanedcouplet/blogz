@@ -7,10 +7,15 @@
     <body>
         <header>
             <nav>
-                <a href="/login">log in</a>
-                <a href="/register">sign up</a>    
                 <a href="/blog">all blog posts</a>
                 <a href="/newpost">post a new entry</a>
+                <!-- TODO make if/then for which links show depending on logged in  -->
+                <!-- {% if SIGNED IN %} -->
+                <a href="/login">log in</a>
+                <a href="/register">sign up</a>
+                <!-- {% else %} -->
+                <a href="/logout">log out</a>
+                <!-- {% endif %} -->
             </nav>
         </header>
         <hr />
@@ -18,6 +23,7 @@
         {% block content %}
         {% endblock %}
 
+        <hr />
         <footer>
             <nav>
                 <a href="/login">log in</a>
