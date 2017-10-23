@@ -42,56 +42,15 @@ class Post(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     owner = db.relationship("User", backref="owner_posts", foreign_keys=[owner_id])
 
-    # tags = db.relationship("Tag", lazy="subquery", backref=db.backref("posts"))
-
-    # category_id = db.Column(db.Integer, db.ForeignKey("category.id"), nullable=False)
-    # category = db.relationship("Category", backref=db.backref("posts"))
-
 # !!! see above
     # def __init__(self, title, body, pub_date, user): #do i put tags in the initialization function?
     #     self.title = title
     #     self.body = body
     #     self.pub_date = pub_date
     #     self.user = user # changed from "self.user_id = user_id" after looking at the completed "Get It Done" code - so maybe finish those lessons
-    #     # self.tags = tags #???
     
     def __repr__(self):
         return "<Post %r>" % self.title
-
-# "Category" class is for making different kinds of posts
-# like "video post" or "text post" etc
-# but I'm commenting it out because that's TOO AMBITIOUS for right now
-# class Category(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String(50), nullable=False)
-
-# # !!! see above
-#     # def __init__(self, name):
-#     #     self.name = name
-    
-#     def __repr__(self):
-#         return "<Category %r>" % self.name
-
-# class Tag(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String(300), nullable=False)
-
-# # !!! see above
-#     # def __init__(self, id, name):
-#     #     self.name = name
-    
-#     def __repr__(self):
-#         return "<Tag %r>" % self.name
-
-# # many-to-many helper table (may need to go BEFORE class definitions??!?)
-# post_tag_table = db.Table(
-#     "post_tag_table", 
-#     db.Column("tag_id", db.Integer, db.ForeignKey("tag.id"), primary_key=True), 
-#     db.Column("post_id", db.Integer, db.ForeignKey("post.id"), primary_key=True)
-#     )
-
-# # not that i understand it really, but tags (many-to-many relationship with posts) are basically copied from the example in the docs:
-# # http://flask-sqlalchemy.pocoo.org/2.3/models/
 
 
 @app.before_request
