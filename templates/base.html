@@ -20,6 +20,15 @@
         </header>
         <hr />
 
+        {% with messages = get_flashed_messages() %}
+            <ul>
+            {% for message in messages %}
+                <li>{{message}}</li>
+            {% endfor %}
+            </ul>
+            
+        {% endwith %}
+
         {% block content %}
         {% endblock %}
 

@@ -21,7 +21,7 @@ class User(db.Model):
 
     posts = db.relationship("Post", backref="user")
 
-    def __init__(self, username, password): #do i need to put posts in here?
+    def __init__(self, username, password): # do i need to put posts in here?
         self.username = username
         self.password = password
         # self.posts = posts #???
@@ -60,23 +60,72 @@ def register():
     
     if request.method == "POST":
         username = request.form["username"]
-        password_initial = request.form["password_initial"]
-        password_verify = request.form["password_verify"]
+        init_password = request.form["init_password"]
+        verify_password = request.form["verify_password"]
+
+        username_error = ""
+        init_password_error = ""
+        verify_password_error = ""
 
         # TODO validate user inputs
-        if len(username) > 50 or len(username) < 3:
-            username_err
 
-        existing_username = User.query.filter_by(username=username).first()
-        if not existing_username:
-            new_user = User(username, password_initial)
-            db.session.add(new_user)
-            db.session.commit()
-            session["username"] = username
-            return redirect("/")
+        # validate username
+        if not username:
+            username_error = "Must enter a username!"
+        elif len(username) < 5:
+            username_error = "Username is too short! (Min: 5 characters)"
+            username = ""
+        elif len(username) > 50:
+            username_error = "Username is too long! (Max: 50 characters)"
+            username = ""
+        elif " " in username:
+            username_error = "Username must not contain spaces!"
+            username = ""
+        
+        # validate init_password
+        if not init_password:
+            init_password_error = "Must enter a password!"
+        elif len(init_password) < 5:
+            init_password_error = "Password is too short! (Min: 5 characters)"
+        elif len(init_password) > 50:
+            init_password_error = "Password is too long! (Max: 50 characters)"
+        elif " " in init_password:
+            init_password_error = "Password must not contain spaces!"
+        elif init_password == username:
+            init_password_error = "Password must be different from username!"
+        
+        # validate verify_password
+        if init_password != verify_password:
+            verify_password_error = "Passwords do not match!"
+
+        # form validation success:
+        if not username_error and not init_password_error and not verify_password_error:
+
+            # but does the user already exist??
+            existing_username = User.query.filter_by(username=username).first()
+
+            # they're new! they're in! add them and redirect to new post page!
+            if not existing_username:
+                new_user = User(username, init_password)
+                db.session.add(new_user)
+                db.session.commit()
+                session["username"] = username
+                flash("Success! Signed in as {username}".format(username=username), category='message')
+                return redirect("/newpost")
+            else:
+                flash("User already exists! Try logging in?", category='error')
+                return redirect("/login")
+
+        # the inputs weren't valid, re-render register template with error messages
         else:
-            # TODO improve response message
-            return "<h1>Duplicate user</h1>"
+            # clear password fields if ANYTHING wasn't validated
+            init_password = ""
+            verify_password = ""
+            return render_template("register.html", 
+                username=username, 
+                username_error=username_error, 
+                init_password_error=init_password_error, 
+                verify_password_error=verify_password_error)
     
     return render_template("register.html")
 
@@ -109,7 +158,7 @@ def login():
 @app.route("/logout", methods=["GET"])
 def logout():
     del session["username"]
-    return redirect("/")
+    return redirect("/blog")
 
 @app.route("/", methods=["POST", "GET"])
 def index():

@@ -2,6 +2,10 @@
     color: red;
 }
 
+.flashmessage {
+    color: orange
+}
+
 body {
     font-family: sans-serif;
 }
