@@ -21,10 +21,6 @@ class User(db.Model):
 
     posts = db.relationship("Post", backref="user")
 
-# !!!
-# "Note how we never defined a __init__ method on the User class? That’s because SQLAlchemy adds an implicit constructor to all model classes which accepts keyword arguments for all its columns and relationships."
-# source: http://flask-sqlalchemy.pocoo.org/2.3/quickstart/#simple-relationships
-# !!!
     def __init__(self, username, password): #do i need to put posts in here?
         self.username = username
         self.password = password
@@ -42,7 +38,6 @@ class Post(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     owner = db.relationship("User", backref="owner_posts", foreign_keys=[owner_id])
 
-# !!! see above
     def __init__(self, title, body, pub_date, owner):
         self.title = title
         self.body = body
@@ -69,6 +64,8 @@ def register():
         password_verify = request.form["password_verify"]
 
         # TODO validate user inputs
+        if len(username) > 50 or len(username) < 3:
+            username_err
 
         existing_username = User.query.filter_by(username=username).first()
         if not existing_username:
