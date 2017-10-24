@@ -25,10 +25,10 @@ class User(db.Model):
 # "Note how we never defined a __init__ method on the User class? That’s because SQLAlchemy adds an implicit constructor to all model classes which accepts keyword arguments for all its columns and relationships."
 # source: http://flask-sqlalchemy.pocoo.org/2.3/quickstart/#simple-relationships
 # !!!
-    # def __init__(self, username, password): #do i need to put posts in here?
-    #     self.username = username
-    #     self.password = password
-    #     # self.posts = posts #???
+    def __init__(self, username, password): #do i need to put posts in here?
+        self.username = username
+        self.password = password
+        # self.posts = posts #???
     
     def __repr__(self):
         return "<User %r>" % self.username
@@ -43,11 +43,11 @@ class Post(db.Model):
     owner = db.relationship("User", backref="owner_posts", foreign_keys=[owner_id])
 
 # !!! see above
-    # def __init__(self, title, body, pub_date, user): #do i put tags in the initialization function?
-    #     self.title = title
-    #     self.body = body
-    #     self.pub_date = pub_date
-    #     self.user = user # changed from "self.user_id = user_id" after looking at the completed "Get It Done" code - so maybe finish those lessons
+    def __init__(self, title, body, pub_date, owner):
+        self.title = title
+        self.body = body
+        self.pub_date = pub_date
+        self.owner = owner
     
     def __repr__(self):
         return "<Post %r>" % self.title

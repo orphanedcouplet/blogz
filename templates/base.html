@@ -10,12 +10,12 @@
                 <a href="/blog">all blog posts</a>
                 <a href="/newpost">post a new entry</a>
                 <!-- TODO make if/then for which links show depending on logged in  -->
-                <!-- {% if SIGNED IN %} -->
+                <!-- {# if SIGNEDIN #} -->
                 <a href="/login">log in</a>
                 <a href="/register">sign up</a>
-                <!-- {% else %} -->
+                <!-- {# else #} -->
                 <a href="/logout">log out</a>
-                <!-- {% endif %} -->
+                <!-- {# endif #} -->
             </nav>
         </header>
         <hr />
@@ -26,10 +26,15 @@
         <hr />
         <footer>
             <nav>
-                <a href="/login">log in</a>
-                <a href="/register">sign up</a>    
                 <a href="/blog">all blog posts</a>
                 <a href="/newpost">post a new entry</a>
+                <!-- TODO make if/then for which links show depending on logged in  -->
+                <!-- {# if SIGNEDIN #} -->
+                <a href="/login">log in</a>
+                <a href="/register">sign up</a>
+                <!-- {# else #} -->
+                <a href="/logout">log out</a>
+                <!-- {# endif #} -->
             </nav>
         </footer>
     </body>
