@@ -54,6 +54,7 @@ class Post(db.Model):
 def require_login():
     allowed_routes = ["login", "register", "all_blogs", "index"]
     if request.endpoint not in allowed_routes and "username" not in session:
+        flash("Must log in to access page!", category='error')
         return redirect("/login")
 
 

@@ -22,12 +22,9 @@
         <hr />
 
         {% with messages = get_flashed_messages() %}
-            <ul>
             {% for message in messages %}
-                <li class="flashmessage">{{message}}</li>
-            {% endfor %}
-            </ul>
-            
+                <p class="flashmessage">{{message}}</p>
+            {% endfor %}            
         {% endwith %}
 
         {% block content %}
