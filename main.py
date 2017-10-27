@@ -166,10 +166,12 @@ def logout():
 @app.route("/", methods=["POST", "GET"])
 def index():
 
-    user = User.query.filter_by(username=session["username"]).first()
-
     # TODO display a list of all usernames
-    
+
+    authors = User.query.order_by(User.username).all()
+
+    return render_template("index.html", authors=authors)
+
 
 @app.route("/blog", methods=["GET"])
 def all_blogs():

@@ -2,8 +2,8 @@
 
 {% block content %}
 
-{# for author in authors #}
-<h3><a href="/author-url">{{author.username}}</a></h3>
-{# endfor #}
+{% for author in authors: %}
+<h3><a href="/">{{author.username}}</a></h3>
+{% endfor %}
 
 {% endblock %}
