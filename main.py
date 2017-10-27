@@ -33,16 +33,18 @@ class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(300), nullable=False)
     body = db.Column(db.Text, nullable=False)
-    pub_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    pub_date = db.Column(db.DateTime, nullable=False)
 
-    owner_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    owner = db.relationship("User", backref="owner_posts", foreign_keys=[owner_id])
+    author_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    author = db.relationship("User", backref="author_posts", foreign_keys=[author_id])
 
-    def __init__(self, title, body, pub_date, owner):
+    def __init__(self, title, body, author, pub_date=None):
         self.title = title
         self.body = body
+        if pub_date is None:
+            pub_date = datetime.now()
         self.pub_date = pub_date
-        self.owner = owner
+        self.author = author
     
     def __repr__(self):
         return "<Post %r>" % self.title
@@ -147,8 +149,8 @@ def login():
                 flash("Incorrect password!", category='error')
                 return redirect("/login")
         else:
-            flash("Username does not exist!", category='error')
-            return redirect("/login")
+            flash("Username does not exist! Try signing up?", category='error')
+            return redirect("/register")
     
     # TODO "Create Account" button
 
@@ -177,8 +179,20 @@ def all_blogs():
         blog_entry = Post.query.filter_by(id=entry_id).first()
         entry_title = blog_entry.title
         entry_body = blog_entry.body
+        author = blog_entry.author.username
+        pub_date = blog_entry.pub_date
+        # make pub_date readable
+        entry_date = pub_date.date()
+        entry_hour_24 = pub_date.time().hour
+        entry_hour = entry_hour_24 % 12
+        entry_minute = pub_date.time().minute
+        entry_time = "{hour}:{minute}".format(hour=entry_hour, minute=entry_minute)
+        if entry_hour_24 > 11:
+            entry_time += " pm"
+        else:
+            entry_time += " am"
 
-        return render_template("blog-entry.html", entry_title=entry_title, entry_body=entry_body)
+        return render_template("blog-entry.html", entry_title=entry_title, entry_body=entry_body, author=author, entry_date=entry_date, entry_time=entry_time)
 
     else:
         entries = Post.query.order_by(desc(Post.id)).all()
@@ -202,9 +216,12 @@ def new_post():
         if not entry_body:
             entry_body_error = "Your post must have text!"
         
-        if not entry_title_error and not entry_body_error:
         # make it post the thing you entered (& redirect to new post URL after it's created)
-            new_entry = Post(entry_title, entry_body)
+        if not entry_title_error and not entry_body_error:
+
+            author = User.query.filter_by(username=session["username"]).first()
+            
+            new_entry = Post(entry_title, entry_body, author)
             db.session.add(new_entry)
             db.session.commit()
             entry_id = new_entry.id

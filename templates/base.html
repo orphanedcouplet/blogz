@@ -7,15 +7,16 @@
     <body>
         <header>
             <nav>
+                <a href="/">home</a>
                 <a href="/blog">all blog posts</a>
-                <a href="/newpost">post a new entry</a>
-                <!-- TODO make if/then for which links show depending on logged in  -->
-                <!-- {# if SIGNEDIN #} -->
+                <!-- if/then for which links show depending on logged in  -->
+                {% if "username" not in session %}
                 <a href="/login">log in</a>
                 <a href="/register">sign up</a>
-                <!-- {# else #} -->
+                {% else %}
+                <a href="/newpost">post a new entry</a>
                 <a href="/logout">log out</a>
-                <!-- {# endif #} -->
+                {% endif %}
             </nav>
         </header>
         <hr />
@@ -23,7 +24,7 @@
         {% with messages = get_flashed_messages() %}
             <ul>
             {% for message in messages %}
-                <li>{{message}}</li>
+                <li class="flashmessage">{{message}}</li>
             {% endfor %}
             </ul>
             
@@ -35,15 +36,16 @@
         <hr />
         <footer>
             <nav>
+                <a href="/">home</a>
                 <a href="/blog">all blog posts</a>
-                <a href="/newpost">post a new entry</a>
-                <!-- TODO make if/then for which links show depending on logged in  -->
-                <!-- {# if SIGNEDIN #} -->
+                <!-- if/then for which links show depending on logged in  -->
+                {% if "username" not in session %}
                 <a href="/login">log in</a>
                 <a href="/register">sign up</a>
-                <!-- {# else #} -->
+                {% else %}
+                <a href="/newpost">post a new entry</a>
                 <a href="/logout">log out</a>
-                <!-- {# endif #} -->
+                {% endif %}
             </nav>
         </footer>
     </body>
