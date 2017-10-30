@@ -4,5 +4,12 @@
 
 <h2>{{entry_title}}</h2>
 <p>{{entry_body}}</p>
+<details>
+    <summary>written by <a href="/blog?user={{author.id}}">{{author.username}}</a></summary>
+    <p>at {{entry_time}}</p>
+    <p>on {{entry_date}}</p>    
+</details>
+
+<hr />
 
 {% endblock %}

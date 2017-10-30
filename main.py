@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.config["DEBUG"] = True
 # Note: the connection string after :// contains the following info:
 # user:password@server:portNumber/databaseName
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://blogz:blogzdevpassword@localhost:8889/blogz"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://blogz:blogzdev@localhost:8889/blogz"
 app.config["SQLALCHEMY_ECHO"] = True
 db = SQLAlchemy(app)
 app.secret_key = "kaljf#ojfm/@iop1j32rmvop+90r8w.........34gfer14@~#$jcehellooperatorcanyougivemenumber9"
@@ -18,19 +18,13 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username =  db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
 
-    posts = db.relationship("Post", backref="user", lazy=True) # True is equivalent to "select" in this case. See flask-sqlalchemy docs for more info. Page is bookmarked: "Declaring Models". Also: do I even need lazy???
+    posts = db.relationship("Post", backref="user")
 
-# !!!
-# "Note how we never defined a __init__ method on the User class? That’s because SQLAlchemy adds an implicit constructor to all model classes which accepts keyword arguments for all its columns and relationships."
-# source: http://flask-sqlalchemy.pocoo.org/2.3/quickstart/#simple-relationships
-# !!!
-    # def __init__(self, username, password, email): #do i need to put posts in here?
-    #     self.username = username
-    #     self.password = password
-    #     self.email = email
-    #     # self.posts = posts #???
+    def __init__(self, username, password): # do i need to put posts in here?
+        self.username = username
+        self.password = password
+        # self.posts = posts #???
     
     def __repr__(self):
         return "<User %r>" % self.username
@@ -39,98 +33,117 @@ class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(300), nullable=False)
     body = db.Column(db.Text, nullable=False)
-    pub_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    pub_date = db.Column(db.DateTime, nullable=False)
 
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    user = db.relationship("User", backref=db.backref("posts", lazy=True))
+    author_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    author = db.relationship("User", backref="author_posts", foreign_keys=[author_id])
 
-    tags = db.relationship("Tag", lazy="subquery", backref=db.backref("posts", lazy=True))
-
-    category_id = db.Column(db.Integer, db.ForeignKey("category.id"), nullable=False)
-    category = db.relationship("Category", backref=db.backref("posts", lazy=True))
-
-# !!! see above
-    # def __init__(self, title, body, pub_date, user): #do i put tags in the initialization function?
-    #     self.title = title
-    #     self.body = body
-    #     self.pub_date = pub_date
-    #     self.user = user # changed from "self.user_id = user_id" after looking at the completed "Get It Done" code - so maybe finish those lessons
-    #     # self.tags = tags #???
+    def __init__(self, title, body, author, pub_date=None):
+        self.title = title
+        self.body = body
+        if pub_date is None:
+            pub_date = datetime.now()
+        self.pub_date = pub_date
+        self.author = author
     
     def __repr__(self):
         return "<Post %r>" % self.title
 
-# "Category" class is for making different kinds of posts
-# like "video post" or "text post" etc
-# but I'm commenting it out because that's TOO AMBITIOUS for right now
-class Category(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
-
-# # !!! see above
-#     # def __init__(self, name):
-#     #     self.name = name
-    
-    def __repr__(self):
-        return "<Category %r>" % self.name
-
-class Tag(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(300), nullable=False)
-
-# !!! see above
-    # def __init__(self, id, name):
-    #     self.name = name
-    
-    def __repr__(self):
-        return "<Tag %r>" % self.name
-
-# many-to-many helper table (may need to go BEFORE class definitions??!?)
-post_tag_table = db.Table(
-    "post_tag_table", 
-    db.Column("tag_id", db.Integer, db.ForeignKey("tag.id"), primary_key=True), 
-    db.Column("post_id", db.Integer, db.ForeignKey("post.id"), primary_key=True)
-    )
-
-# not that i understand it really, but tags (many-to-many relationship with posts) are basically copied from the example in the docs:
-# http://flask-sqlalchemy.pocoo.org/2.3/models/
-
 
 @app.before_request
 def require_login():
-    allowed_routes = ["login", "register"]
+    allowed_routes = ["login", "register", "all_blogs", "index"]
     if request.endpoint not in allowed_routes and "username" not in session:
+        flash("Must log in to access page!", category='error')
         return redirect("/login")
 
 
 @app.route("/register", methods=["POST", "GET"])
 def register():
+
+    # page title
+    title = "Sign up!"
     
     if request.method == "POST":
         username = request.form["username"]
-        password_initial = request.form["password_initial"]
-        password_verify = request.form["password_verify"]
-        email = request.form["email"]
+        init_password = request.form["init_password"]
+        verify_password = request.form["verify_password"]
+
+        username_error = ""
+        init_password_error = ""
+        verify_password_error = ""
 
         # TODO validate user inputs
 
-        existing_username = User.query.filter_by(username=username).first()
-        existing_email = User.query.filter_by(email=email).first()
-        if not existing_username and not existing_email:
-            new_user = User(username, password_initial, email)
-            db.session.add(new_user)
-            db.session.commit()
-            session["username"] = username
-            return redirect("/")
+        # validate username
+        if not username:
+            username_error = "Must enter a username!"
+        elif len(username) < 5:
+            username_error = "Username is too short! (Min: 5 characters)"
+            username = ""
+        elif len(username) > 50:
+            username_error = "Username is too long! (Max: 50 characters)"
+            username = ""
+        elif " " in username:
+            username_error = "Username must not contain spaces!"
+            username = ""
+        
+        # validate init_password
+        if not init_password:
+            init_password_error = "Must enter a password!"
+        elif len(init_password) < 5:
+            init_password_error = "Password is too short! (Min: 5 characters)"
+        elif len(init_password) > 50:
+            init_password_error = "Password is too long! (Max: 50 characters)"
+        elif " " in init_password:
+            init_password_error = "Password must not contain spaces!"
+        elif init_password == username:
+            init_password_error = "Password must be different from username!"
+        
+        # validate verify_password
+        if init_password != verify_password:
+            verify_password_error = "Passwords do not match!"
+
+        # form validation success:
+        if not username_error and not init_password_error and not verify_password_error:
+
+            # but does the user already exist??
+            existing_username = User.query.filter_by(username=username).first()
+
+            # they're new! they're in! add them and redirect to new post page!
+            if not existing_username:
+                new_user = User(username, init_password)
+                db.session.add(new_user)
+                db.session.commit()
+                session["username"] = username
+                flash("Success! Signed in as {username}".format(username=username), category='message')
+                return redirect("/newpost")
+            else:
+                flash("User already exists! Try logging in?", category='error')
+                return redirect("/login")
+
+        # the inputs weren't valid, re-render register template with error messages
         else:
-            # TODO improve response message
-            return "<h1>Duplicate user</h1>"
+            # clear password fields if ANYTHING wasn't validated
+            init_password = ""
+            verify_password = ""
+            return render_template(
+                "register.html", 
+                title=title, 
+                username=username, 
+                username_error=username_error, 
+                init_password_error=init_password_error, 
+                verify_password_error=verify_password_error
+                )
     
-    return render_template("register.html")
+    return render_template("register.html", title=title)
 
 
 @app.route("/login", methods=["POST", "GET"])
 def login():
+
+    # page title
+    title = "Log in!"
 
     if request.method == "POST":
         username = request.form["username"]
@@ -146,37 +159,83 @@ def login():
                 flash("Incorrect password!", category='error')
                 return redirect("/login")
         else:
-            flash("Username does not exist!", category='error')
-            return redirect("/login")
+            flash("Username does not exist! Try signing up?", category='error')
+            return redirect("/register")
     
     # TODO "Create Account" button
 
-    return render_template("login.html")
+    return render_template("login.html", title=title)
 
 
 @app.route("/logout", methods=["GET"])
 def logout():
-    del session["email"]
-    return redirect("/")
+    del session["username"]
+    flash("Logged out!")
+    return redirect("/blog")
 
 @app.route("/", methods=["POST", "GET"])
 def index():
 
-    user = User.query.filter_by(username=session["username"]).first()
-    
+    # page title
+    title = "All the bloggers!"
+
+    authors = User.query.order_by(User.username).all()
+
+    return render_template("index.html", title=title, authors=authors)
+
 
 @app.route("/blog", methods=["GET"])
 def all_blogs():
     
     entry_id = request.args.get("id")
+    user_id = request.args.get("user")
 
+    # single entry
     if entry_id:
+        # blog entry info:
         blog_entry = Post.query.filter_by(id=entry_id).first()
         entry_title = blog_entry.title
         entry_body = blog_entry.body
+        author = blog_entry.author
+        pub_date = blog_entry.pub_date
+        # make pub_date readable
+        entry_date = pub_date.date()
+        entry_hour_24 = pub_date.time().hour
+        entry_hour = entry_hour_24 % 12
+        entry_minute = pub_date.time().minute
+        if entry_minute < 10:
+            entry_minute = "0" + str(entry_minute)
+        entry_time = "{hour}:{minute}".format(hour=entry_hour, minute=entry_minute)
+        if entry_hour_24 > 11:
+            entry_time += " pm"
+        else:
+            entry_time += " am"
+        # page title:
+        title=author.username + ": " + entry_title
 
-        return render_template("blog-entry.html", entry_title=entry_title, entry_body=entry_body)
+        return render_template(
+            "blog-entry.html", 
+            title=title, 
+            entry_title=entry_title, 
+            entry_body=entry_body, 
+            author=author, 
+            entry_date=entry_date, 
+            entry_time=entry_time
+            )
 
+    # single user page
+    elif user_id:
+        author = User.query.filter_by(id=user_id).first()
+        entries = author.posts
+        title = author.username + "'s blog entries!"
+        return render_template(
+            "single-user.html", 
+            title=title, 
+            author=author, 
+            entries=entries
+            )
+
+    # all entries
     else:
         entries = Post.query.order_by(desc(Post.id)).all()
         return render_template("blog.html", title="The Blog", entries=entries)
@@ -184,6 +243,10 @@ def all_blogs():
 
 @app.route("/newpost", methods=["POST", "GET"])
 def new_post():
+
+    #page title
+    title="Write a new post!"
+
     # validation errors
     if request.method == "POST":
         entry_title = request.form["title"]
@@ -199,9 +262,12 @@ def new_post():
         if not entry_body:
             entry_body_error = "Your post must have text!"
         
-        if not entry_title_error and not entry_body_error:
         # make it post the thing you entered (& redirect to new post URL after it's created)
-            new_entry = Post(entry_title, entry_body)
+        if not entry_title_error and not entry_body_error:
+
+            author = User.query.filter_by(username=session["username"]).first()
+            
+            new_entry = Post(entry_title, entry_body, author)
             db.session.add(new_entry)
             db.session.commit()
             entry_id = new_entry.id
@@ -209,11 +275,12 @@ def new_post():
         else:
             return render_template(
             "newpost.html", 
+            title=title,
             entry_title_error=entry_title_error, 
             entry_body_error=entry_body_error
             )
 
-    return render_template("newpost.html")
+    return render_template("newpost.html", title=title)
 
 
 

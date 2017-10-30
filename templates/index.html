@@ -2,5 +2,10 @@
 
 {% block content %}
 
+{% for author in authors: %}
+<h3><a href="/blog?user={{author.id}}">{{author.username}}</a></h3>
+{% endfor %}
+
+<hr />
 
 {% endblock %}
