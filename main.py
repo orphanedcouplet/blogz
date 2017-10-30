@@ -60,6 +60,9 @@ def require_login():
 
 @app.route("/register", methods=["POST", "GET"])
 def register():
+
+    # page title
+    title = "Sign up!"
     
     if request.method == "POST":
         username = request.form["username"]
@@ -124,17 +127,23 @@ def register():
             # clear password fields if ANYTHING wasn't validated
             init_password = ""
             verify_password = ""
-            return render_template("register.html", 
+            return render_template(
+                "register.html", 
+                title=title, 
                 username=username, 
                 username_error=username_error, 
                 init_password_error=init_password_error, 
-                verify_password_error=verify_password_error)
+                verify_password_error=verify_password_error
+                )
     
-    return render_template("register.html")
+    return render_template("register.html", title=title)
 
 
 @app.route("/login", methods=["POST", "GET"])
 def login():
+
+    # page title
+    title = "Log in!"
 
     if request.method == "POST":
         username = request.form["username"]
@@ -155,48 +164,78 @@ def login():
     
     # TODO "Create Account" button
 
-    return render_template("login.html")
+    return render_template("login.html", title=title)
 
 
 @app.route("/logout", methods=["GET"])
 def logout():
     del session["username"]
+    flash("Logged out!")
     return redirect("/blog")
 
 @app.route("/", methods=["POST", "GET"])
 def index():
 
-    # TODO display a list of all usernames
+    # page title
+    title = "All the bloggers!"
 
     authors = User.query.order_by(User.username).all()
 
-    return render_template("index.html", authors=authors)
+    return render_template("index.html", title=title, authors=authors)
 
 
 @app.route("/blog", methods=["GET"])
 def all_blogs():
     
     entry_id = request.args.get("id")
+    user_id = request.args.get("user")
 
+    # single entry
     if entry_id:
+        # blog entry info:
         blog_entry = Post.query.filter_by(id=entry_id).first()
         entry_title = blog_entry.title
         entry_body = blog_entry.body
-        author = blog_entry.author.username
+        author = blog_entry.author
         pub_date = blog_entry.pub_date
         # make pub_date readable
         entry_date = pub_date.date()
         entry_hour_24 = pub_date.time().hour
         entry_hour = entry_hour_24 % 12
         entry_minute = pub_date.time().minute
+        if entry_minute < 10:
+            entry_minute = "0" + str(entry_minute)
         entry_time = "{hour}:{minute}".format(hour=entry_hour, minute=entry_minute)
         if entry_hour_24 > 11:
             entry_time += " pm"
         else:
             entry_time += " am"
+        # page title:
+        title=author.username + ": " + entry_title
 
-        return render_template("blog-entry.html", entry_title=entry_title, entry_body=entry_body, author=author, entry_date=entry_date, entry_time=entry_time)
+        return render_template(
+            "blog-entry.html", 
+            title=title, 
+            entry_title=entry_title, 
+            entry_body=entry_body, 
+            author=author, 
+            entry_date=entry_date, 
+            entry_time=entry_time
+            )
 
+    # single user page
+    elif user_id:
+        author = User.query.filter_by(id=user_id).first()
+        entries = author.posts
+        title = author.username + "'s blog entries!"
+        return render_template(
+            "single-user.html", 
+            title=title, 
+            author=author, 
+            entries=entries
+            )
+
+    # all entries
     else:
         entries = Post.query.order_by(desc(Post.id)).all()
         return render_template("blog.html", title="The Blog", entries=entries)
@@ -204,6 +243,10 @@ def all_blogs():
 
 @app.route("/newpost", methods=["POST", "GET"])
 def new_post():
+
+    #page title
+    title="Write a new post!"
+
     # validation errors
     if request.method == "POST":
         entry_title = request.form["title"]
@@ -232,11 +275,12 @@ def new_post():
         else:
             return render_template(
             "newpost.html", 
+            title=title,
             entry_title_error=entry_title_error, 
             entry_body_error=entry_body_error
             )
 
-    return render_template("newpost.html")
+    return render_template("newpost.html", title=title)
 
 
 

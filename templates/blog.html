@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
+
     <h1>Blog Entries</h1>
 
     <hr />
@@ -13,7 +14,7 @@
 
         {% for entry in entries %}
             <h2><a href="/blog?id={{entry.id}}">{{entry.title}}</a></h2>
-            <h3>{{entry.author.username}}</h3>
+            <h3><a href="/blog?user={{entry.author.id}}">{{entry.author.username}}</a></h3>
             <h4>{{entry.pub_date.date()}}</h4>
             <p>{{entry.body}}</p>
             <hr />
